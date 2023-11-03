@@ -27,8 +27,13 @@
 #include <time.h>
 #include <stdbool.h>
 
+//Defines a constant `MAX_SIZE` to set the maximum size for queues and arrays.
+
 #define MAX_SIZE 100
 
+
+//Defines a struct `Process` to represent process details, including ProcessId, ArrivalTime, BurstTime, WaitingTime, 
+//CompletionTime, TurnAroundTime, and a flag `IsCompleted`.
 struct Process
 {
     int ProcessId;
@@ -40,6 +45,9 @@ struct Process
     bool IsCompleted;
 };
 
+//Defines a struct `Results` to store the results of simulation, including average waiting time, 
+//average turnaround time, the number of processes completed, time quantum used, and total time taken.
+
 struct Results
 {
     float AvgWaitingTime;
@@ -49,12 +57,17 @@ struct Results
     int TimeTaken;
 };
 
+//Defines a struct `Queue` to represent a queue data structure for processes with a circular array 
+//of processes and front/rear indices.
+
 struct Queue
 {
     struct Process Processes[MAX_SIZE];
     int front;
     int rear;
 };
+
+//Initializes the queue by setting the front and rear indices and initializing the process data in the array.
 
 void initializeQueue(struct Queue *q)
 {
@@ -72,10 +85,14 @@ void initializeQueue(struct Queue *q)
     }
 }
 
+//Checks if the queue is empty by comparing the front index with -1.
+
 int isEmpty(struct Queue *q)
 {
     return (q->front == -1);
 }
+
+//Adds a process to the queue by updating the rear and placing the process in the array.
 
 void enqueue(struct Queue *q, struct Process ProcessToEnqueue)
 {
@@ -89,6 +106,8 @@ void enqueue(struct Queue *q, struct Process ProcessToEnqueue)
     }
     q->Processes[q->rear] = ProcessToEnqueue;
 }
+
+//Removes a process from the queue by updating the front index and returning the dequeued process.
 
 struct Process dequeue(struct Queue *q)
 {
@@ -104,6 +123,8 @@ struct Process dequeue(struct Queue *q)
     }
     return DequeuedProcess;
 }
+
+//Finds a process in the queue by comparing ProcessId and returns its index.
 
 int found(struct Queue *q, struct Process TargetProcess)
 {
@@ -126,6 +147,8 @@ int found(struct Queue *q, struct Process TargetProcess)
     return -1;
 }
 
+//Sorts an array of processes based on their ArrivalTime in ascending order.
+
 void SortProcessesByArrivalTime(struct Process ProcessTable[], int NumOfProcesses)
 {
     for (int i = 0; i < NumOfProcesses; i++)
@@ -140,6 +163,9 @@ void SortProcessesByArrivalTime(struct Process ProcessTable[], int NumOfProcesse
         ProcessTable[j + 1] = KeyProcess;
     }
 }
+
+//Simulates the Round Robin scheduling algorithm using the provided process data and parameters. 
+//It returns the simulation results.
 
 struct Results SimulateRoundRobin(struct Process ProcessTable[], int NumOfProcesses, int TotalSimulationTime, int TimeQuantum)
 {
@@ -247,11 +273,15 @@ struct Results SimulateRoundRobin(struct Process ProcessTable[], int NumOfProces
     return Solution;
 }
 
+//Generates a random Time Quantum, then calls `SimulateRoundRobin` with the random time quantum and returns the results.
+
 struct Results SimulateRandomRoundRobin(struct Process ProcessTable[], int NumOfProcesses, int TotalSimulationTime)
 {
     int TimeQuantum = rand() % 10 + 1;
     return SimulateRoundRobin(ProcessTable, NumOfProcesses, TotalSimulationTime, TimeQuantum);
 }
+
+//Generates a random process table with the specified number of processes and returns it.
 
 struct Process *GenerateRandomProcessTable(int NumOfProcesses)
 {
@@ -271,6 +301,8 @@ struct Process *GenerateRandomProcessTable(int NumOfProcesses)
     return ProcessTable;
 }
 
+//Resets process data (IsCompleted, CompletionTime, WaitingTime, TurnAroundTime) for a given array of processes.
+
 void ResestProcessTable(struct Process ProcessTable[], int NumOfProcesses)
 {
     for (int i = 0; i < NumOfProcesses; i++)
@@ -281,6 +313,8 @@ void ResestProcessTable(struct Process ProcessTable[], int NumOfProcesses)
         ProcessTable[i].TurnAroundTime = 0;
     }
 }
+
+//Simulates the First-Come-First-Serve (FCFS) scheduling algorithm and returns the results.
 
 struct Results FirstComeFirstServe(struct Process ProcessTable[], int NumOfProcesses, int TotalSimulationTime)
 {
@@ -327,6 +361,8 @@ struct Results FirstComeFirstServe(struct Process ProcessTable[], int NumOfProce
 
     return Answer;
 }
+
+//Simulates the Shortest Job First (SJF) scheduling algorithm and returns the results.
 
 struct Results ShortestJobFirst(struct Process ProcessTable[], int NumOfProcesses, int TotalSimulationTime)
 {
@@ -399,10 +435,13 @@ struct Results ShortestJobFirst(struct Process ProcessTable[], int NumOfProcesse
     return Answer;
 }
 
+//Displays simulation results for Round Robin, FCFS, and SJF, 
+//including process details and a comparison of scheduling algorithms. It waits for user input to continue.
+
 void showSimulationData(struct Process ProcessTable[], int NumOfProcesses, struct Results RR)
 {
     system("cls");
-    printf("\x1b[33m==========\x1b[0m Simulation Results \x1b[33m==========\x1b[0m\n\n");
+    printf("\n\x1b[33m==========\x1b[0m Simulation Results \x1b[33m==========\x1b[0m\n\n");
     printf("\x1b[31m=====\x1b[0m Round Robin \x1b[31m=====\x1b[0m\n\n");
     printf("ProcessId\tArrivalTime\tBurstTime\tWaitingTime\tTurnAroundTime\tCompletionTime\n");
 
@@ -471,6 +510,8 @@ void showSimulationData(struct Process ProcessTable[], int NumOfProcesses, struc
     getchar();
 }
 
+//Displays the main menu for the user to select simulation options.
+
 void printMenu()
 {
     system("cls");
@@ -481,6 +522,8 @@ void printMenu()
     printf("Enter your choice: ");
 }
 
+//Gets custom input from the user and simulates the Round Robin algorithm.
+
 void generateRandomInputAndSimulate()
 {
     system("cls");
@@ -490,6 +533,8 @@ void generateRandomInputAndSimulate()
     struct Results Answer = SimulateRandomRoundRobin(ProcessTable, NumOfProcesses, 1000);
     showSimulationData(ProcessTable, NumOfProcesses, Answer);
 }
+
+//Generates random input and simulates the Round Robin algorithm.
 
 void getCustomInput()
 {
@@ -521,6 +566,10 @@ void getCustomInput()
     struct Results Answer = SimulateRoundRobin(ProcessTable, NumOfProcesses, 1000, TimeQuantum);
     showSimulationData(ProcessTable, NumOfProcesses, Answer);
 }
+
+
+//The main function initializes randomization, provides a menu for user choices, 
+//and calls the appropriate functions based on the user's selection.
 
 int main()
 {
@@ -556,3 +605,7 @@ int main()
 
     return 0;
 }
+
+//The code mainly focuses on simulating different process scheduling algorithms (Round Robin, FCFS, and SJF) 
+//and allows the user to choose between custom input or random input for simulation. 
+//The results are then displayed, including process details and a comparison of scheduling algorithms.
