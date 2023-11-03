@@ -1,3 +1,27 @@
+/*
+
+
+
+
+    ----------------------------------------
+    |  CA2: OS Simulation-Based Project    |
+    ----------------------------------------
+    | Author: Harjaspal Singh              |
+    ----------------------------------------
+    | Registration Number: 12219588        |
+    ----------------------------------------
+    | Roll Number: RK22SPB44               |
+    ----------------------------------------
+    | Section: K22SP                       |
+    ----------------------------------------
+    | Course Code: CSE316                  |
+    ----------------------------------------
+
+
+
+*/    
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -138,6 +162,7 @@ struct Results SimulateRoundRobin(struct Process ProcessTable[], int NumOfProces
     Solution.NoOfProcessesCompleted = 0;
     Solution.AvgTurnAroundTime = 0;
     Solution.AvgWaitingTime = 0;
+    Solution.TimeTaken = 0;
 
     while (TimeSpent < TotalSimulationTime)
     {
@@ -209,6 +234,10 @@ struct Results SimulateRoundRobin(struct Process ProcessTable[], int NumOfProces
             Solution.AvgWaitingTime += ProcessTable[i].WaitingTime;
 
             Solution.NoOfProcessesCompleted += 1;
+
+            if(Solution.TimeTaken < ProcessTable[i].CompletionTime){
+                Solution.TimeTaken = ProcessTable[i].CompletionTime;
+            }
         }
     }
 
@@ -242,11 +271,6 @@ struct Process *GenerateRandomProcessTable(int NumOfProcesses)
     return ProcessTable;
 }
 
-void clearScreen()
-{
-    printf("\033[H\033[J");
-}
-
 void ResestProcessTable(struct Process ProcessTable[], int NumOfProcesses)
 {
     for (int i = 0; i < NumOfProcesses; i++)
@@ -263,20 +287,28 @@ struct Results FirstComeFirstServe(struct Process ProcessTable[], int NumOfProce
     SortProcessesByArrivalTime(ProcessTable, NumOfProcesses);
 
     int TimeSpent = ProcessTable[0].ArrivalTime;
-    int CurrentProcess = 0;
 
     struct Results Answer;
+    Answer.NoOfProcessesCompleted = 0;
+    Answer.AvgTurnAroundTime = 0;
+    Answer.AvgWaitingTime = 0;
+    Answer.TimeTaken = 0;
+    Answer.TimeQuantum = 0;
 
-    while (TimeSpent < TotalSimulationTime)
+    for (int i = 0; i < NumOfProcesses; i++)
     {
-        TimeSpent += ProcessTable[CurrentProcess].BurstTime;
-        ProcessTable[CurrentProcess].IsCompleted = true;
-        ProcessTable[CurrentProcess].CompletionTime = TimeSpent;
-        ProcessTable[CurrentProcess].WaitingTime = TimeSpent - ProcessTable[CurrentProcess].BurstTime - ProcessTable[CurrentProcess].ArrivalTime;
-        ProcessTable[CurrentProcess].TurnAroundTime = ProcessTable[CurrentProcess].WaitingTime + ProcessTable[CurrentProcess].BurstTime;
-        CurrentProcess++;
+        if (TimeSpent >= TotalSimulationTime)
+        {
+            break;
+        }
+
+        TimeSpent += ProcessTable[i].BurstTime;
+        ProcessTable[i].IsCompleted = true;
+        ProcessTable[i].CompletionTime = TimeSpent;
+        ProcessTable[i].WaitingTime = TimeSpent - ProcessTable[i].ArrivalTime - ProcessTable[i].BurstTime;
+        ProcessTable[i].TurnAroundTime = ProcessTable[i].BurstTime;
     }
-    
+
     for (int i = 0; i < NumOfProcesses; i++)
     {
         if (ProcessTable[i].IsCompleted)
@@ -288,20 +320,90 @@ struct Results FirstComeFirstServe(struct Process ProcessTable[], int NumOfProce
             {
                 Answer.TimeTaken = ProcessTable[i].CompletionTime;
             }
-            
         }
         Answer.AvgWaitingTime /= NumOfProcesses;
         Answer.AvgTurnAroundTime /= NumOfProcesses;
     }
+
     return Answer;
 }
 
-
-void showSimulationData(struct Process ProcessTable[], int NumOfProcesses, struct Results Answer)
+struct Results ShortestJobFirst(struct Process ProcessTable[], int NumOfProcesses, int TotalSimulationTime)
 {
-    clearScreen();
-    printf("\x1b[33m========== Simulation Results ==========\x1b[0m\n\n");
-    printf("\x1b[31m===== Round Robin =====\x1b[0m\n\n");
+    SortProcessesByArrivalTime(ProcessTable, NumOfProcesses);
+
+    int TimeSpent = ProcessTable[0].ArrivalTime;
+
+    struct Results Answer;
+    Answer.NoOfProcessesCompleted = 0;
+    Answer.AvgTurnAroundTime = 0;
+    Answer.AvgWaitingTime = 0;
+    Answer.TimeTaken = 0;
+    Answer.TimeQuantum = 0;
+
+    while (TimeSpent < TotalSimulationTime)
+    {
+
+        struct Process KeyProcess;
+        KeyProcess.BurstTime = 1000;
+
+        for (int i = 0; i < NumOfProcesses; i++)
+        {
+            if (!ProcessTable[i].IsCompleted && TimeSpent >= ProcessTable[i].ArrivalTime)
+            {
+                if (KeyProcess.BurstTime > ProcessTable[i].BurstTime)
+                {
+                    KeyProcess = ProcessTable[i];
+                }
+            }
+        }
+
+        if (KeyProcess.BurstTime == 1000)
+        {
+            break;
+        }
+
+        TimeSpent += KeyProcess.BurstTime;
+        KeyProcess.IsCompleted = true;
+        KeyProcess.CompletionTime = TimeSpent;
+
+        for (int i = 0; i < NumOfProcesses; i++)
+        {
+            if (ProcessTable[i].ProcessId == KeyProcess.ProcessId)
+            {
+                ProcessTable[i] = KeyProcess;
+                break;
+            }
+        }
+    }
+
+    for (int i = 0; i < NumOfProcesses; i++)
+    {
+        ProcessTable[i].TurnAroundTime = ProcessTable[i].CompletionTime - ProcessTable[i].ArrivalTime;
+        ProcessTable[i].WaitingTime = ProcessTable[i].TurnAroundTime - ProcessTable[i].BurstTime;
+
+        if (ProcessTable[i].IsCompleted)
+        {
+            Answer.NoOfProcessesCompleted += 1;
+            Answer.AvgWaitingTime += ProcessTable[i].WaitingTime;
+            Answer.AvgTurnAroundTime += ProcessTable[i].TurnAroundTime;
+            if (ProcessTable[i].CompletionTime > Answer.TimeTaken)
+            {
+                Answer.TimeTaken = ProcessTable[i].CompletionTime;
+            }
+        }
+        Answer.AvgWaitingTime /= NumOfProcesses;
+        Answer.AvgTurnAroundTime /= NumOfProcesses;
+    }
+
+    return Answer;
+}
+
+void showSimulationData(struct Process ProcessTable[], int NumOfProcesses, struct Results RR)
+{
+    system("cls");
+    printf("\x1b[33m==========\x1b[0m Simulation Results \x1b[33m==========\x1b[0m\n\n");
+    printf("\x1b[31m=====\x1b[0m Round Robin \x1b[31m=====\x1b[0m\n\n");
     printf("ProcessId\tArrivalTime\tBurstTime\tWaitingTime\tTurnAroundTime\tCompletionTime\n");
 
     for (int i = 0; i < NumOfProcesses; i++)
@@ -317,10 +419,10 @@ void showSimulationData(struct Process ProcessTable[], int NumOfProcesses, struc
             }
         }
     }
-    printf("\nTime Quantum: %d\n\n", Answer.TimeQuantum);
+    printf("\nTime Quantum: %d\n\n", RR.TimeQuantum);
     ResestProcessTable(ProcessTable, NumOfProcesses);
     struct Results FCFS = FirstComeFirstServe(ProcessTable, NumOfProcesses, 1000);
-    printf("\x1b[31m===== FCFS =====\x1b[0m\n\n");
+    printf("\x1b[31m=====\x1b[0m FCFS \x1b[31m=====\x1b[0m\n\n");
     printf("ProcessId\tArrivalTime\tBurstTime\tWaitingTime\tTurnAroundTime\tCompletionTime\n");
 
     for (int i = 0; i < NumOfProcesses; i++)
@@ -336,6 +438,34 @@ void showSimulationData(struct Process ProcessTable[], int NumOfProcesses, struc
             }
         }
     }
+    ResestProcessTable(ProcessTable, NumOfProcesses);
+    struct Results SJF = ShortestJobFirst(ProcessTable, NumOfProcesses, 1000);
+    printf("\n\x1b[31m=====\x1b[0m SJF \x1b[31m=====\x1b[0m\n\n");
+    printf("ProcessId\tArrivalTime\tBurstTime\tWaitingTime\tTurnAroundTime\tCompletionTime\n");
+
+    for (int i = 0; i < NumOfProcesses; i++)
+    {
+        for (int j = 0; j < NumOfProcesses; j++)
+        {
+            if (ProcessTable[j].ProcessId == i + 1)
+            {
+                printf("%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\n",
+                       ProcessTable[j].ProcessId, ProcessTable[j].ArrivalTime, ProcessTable[j].BurstTime,
+                       ProcessTable[j].WaitingTime, ProcessTable[j].TurnAroundTime, ProcessTable[j].CompletionTime);
+                break;
+            }
+        }
+    }
+
+    printf("\n\n\x1b[33m==========\x1b[0m Scheduling Algorithm Comparison \x1b[33m==========\x1b[0m\n\n");
+    printf("\n\x1b[31m==============================\x1b[0m Comparison \x1b[31m==============================\x1b[0m\n");
+    printf("| Metric                 | Round Robin       | FCFS              | SJF               |\n");
+    printf("|------------------------|-------------------|-------------------|-------------------|\n");
+    printf("| Average Waiting Time   | %.2f              | %.2f              | %.2f              |\n", RR.AvgWaitingTime, FCFS.AvgWaitingTime, SJF.AvgWaitingTime);
+    printf("| Average Turnaround Time| %.2f              | %.2f              | %.2f              |\n", RR.AvgTurnAroundTime, FCFS.AvgTurnAroundTime, SJF.AvgTurnAroundTime);
+    printf("| Processes Completed    | %d                  | %d                  | %d                  |\n", RR.NoOfProcessesCompleted, FCFS.NoOfProcessesCompleted, SJF.NoOfProcessesCompleted);
+    printf("| Time Taken             | %d                  | %d                  | %d                  |\n", RR.TimeTaken, FCFS.TimeTaken, SJF.TimeTaken);
+    printf("=============================================================================================\n");
     printf("\nPress Enter to return to the main menu...");
     while (getchar() != '\n');
     getchar();
@@ -343,8 +473,8 @@ void showSimulationData(struct Process ProcessTable[], int NumOfProcesses, struc
 
 void printMenu()
 {
-    clearScreen();
-    printf("\n\x1b[33m========== Process Scheduling Simulation ==========\x1b[0m\n\n");
+    system("cls");
+    printf("\n\x1b[33m==========\x1b[0m Process Scheduling Simulation \x1b[33m==========\x1b[0m\n\n");
     printf("1. Custom Input\n");
     printf("2. Random Input\n");
     printf("3. Quit\n");
@@ -353,7 +483,7 @@ void printMenu()
 
 void generateRandomInputAndSimulate()
 {
-    clearScreen();
+    system("cls");
     int NumOfProcesses = rand() % 10;
     NumOfProcesses = NumOfProcesses < 5 ? 5 : NumOfProcesses;
     struct Process *ProcessTable = GenerateRandomProcessTable(NumOfProcesses);
@@ -363,8 +493,8 @@ void generateRandomInputAndSimulate()
 
 void getCustomInput()
 {
-    clearScreen();
-    printf("========== Custom Input ==========\n\n");
+    system("cls");
+    printf("\x1b[31m=====\x1b[0m Custom Input \x1b[31m=====\x1b[0m\n\n");
     int NumOfProcesses = 0;
     printf("Enter the number of processes: ");
     scanf("%d", &NumOfProcesses);
@@ -378,7 +508,7 @@ void getCustomInput()
         ProcessTable[i].WaitingTime = 0;
         ProcessTable[i].TurnAroundTime = 0;
         ProcessTable[i].ProcessId = i + 1;
-        printf("ArrivalTime for Process %d: ", i + 1);
+        printf("\nArrivalTime for Process %d: ", i + 1);
         scanf("%d", &ProcessTable[i].ArrivalTime);
         printf("BurstTime for Process %d: ", i + 1);
         scanf("%d", &ProcessTable[i].BurstTime);
@@ -400,13 +530,13 @@ int main()
 
     while (1)
     {
-        clearScreen();
+        system("cls");
         printMenu();
-        
+
         choice = 0;
         scanf("%d", &choice);
 
-        switch (choice)
+        switch ((int)choice)
         {
         case 1:
             getCustomInput();
@@ -415,7 +545,7 @@ int main()
             generateRandomInputAndSimulate();
             break;
         case 3:
-            clearScreen();
+            system("cls");
             printf("Goodbye!\n");
             exit(0);
         default:
