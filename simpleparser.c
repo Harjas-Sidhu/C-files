@@ -27,7 +27,8 @@ void parser(char *str)
 
 int main()
 {
-    char str[40] = "<h1>    This is A Heading </h1>";
+    char str[100];
+    scanf("%[^\n]%c", &str);
     printf("Before parsing: $$%s$$\n", str);
     parser(str);
     printf("After parsing: $$%s$$\n", str);
